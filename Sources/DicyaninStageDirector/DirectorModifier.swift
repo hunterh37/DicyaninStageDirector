@@ -33,3 +33,29 @@ public extension View {
     }
 }
 #endif
+
+#if canImport(SwiftUI) && os(iOS)
+import SwiftUI
+
+/// iOS host: one window, no immersive spaces, so there are no scene actions to wire.
+/// No-op without director launch args.
+public struct DirectorHost: ViewModifier {
+    let register: (RouteBook) -> Void
+
+    public func body(content: Content) -> some View {
+        content.task {
+            let d = Director.shared
+            guard d.isDirecting else { return }
+            d.register(register)
+            d.start()
+        }
+    }
+}
+
+public extension View {
+    /// `.director { book in book.route("hero") { take in ... } }`
+    func director(_ register: @escaping (RouteBook) -> Void) -> some View {
+        modifier(DirectorHost(register: register))
+    }
+}
+#endif
